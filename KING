@@ -1,0 +1,1282 @@
+-- ═══════════════════════════════════════════════════════════════
+--  [17] COMPONENTE: TOGGLE
+-- ═══════════════════════════════════════════════════════════════
+function Components.toggle(parent, opts)
+    opts = opts or {}
+    local text = opts.text or "Toggle"
+    local default = opts.default or false
+    local desc = opts.desc
+    local onChange = opts.callback
+
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, 0, 0, desc and 56 or 44)
+    row.BackgroundColor3 = T.Card
+    row.BackgroundTransparency = 0.15
+    row.BorderSizePixel = 0
+    row.Parent = parent
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = T.Border
+    stroke.Thickness = 1
+    stroke.Transparency = 0.7
+    stroke.Parent = row
+
+    local label = Instance.new("TextLabel")
+    label.Text = text
+    label.Font = FONT_MED
+    label.TextSize = 13
+    label.TextColor3 = T.Text
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Size = UDim2.new(1, -80, 0, desc and 18 or 44)
+    label.Position = UDim2.new(0, 14, 0, desc and 8 or 0)
+    label.BackgroundTransparency = 1
+    label.Parent = row
+
+    if desc then
+        local d = Instance.new("TextLabel")
+        d.Text = desc
+        d.Font = FONT
+        d.TextSize = 10
+        d.TextColor3 = T.TextMuted
+        d.TextXAlignment = Enum.TextXAlignment.Left
+        d.Size = UDim2.new(1, -80, 0, 14)
+        d.Position = UDim2.new(0, 14, 0, 28)
+        d.BackgroundTransparency = 1
+        d.Parent = row
+    end
+
+    local state = default
+
+    local track = Instance.new("Frame")
+    track.Size = UDim2.new(0, 46, 0, 24)
+    track.Position = UDim2.new(1, -58, 0.5, -12)
+    track.BackgroundColor3 = state and T.Accent or T.GlassHi
+    track.BorderSizePixel = 0
+    track.Parent = row
+    Instance.new("UICorner", track).CornerRadius = UDim.new(0, 12)
+
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 18, 0, 18)
+    knob.Position = state and UDim2.new(0, 25, 0, 3) or UDim2.new(0, 3, 0, 3)
+    knob.BackgroundColor3 = Color3.fromRGB(245, 245, 252)
+    knob.BorderSizePixel = 0
+    knob.Parent = track
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+    local btn = Instance.new("TextButton")
+    btn.Text = ""
+    btn.Size = UDim2.new(1, 0, 1, 0)
+    btn.BackgroundTransparency = 1
+    btn.Parent = row
+
+    local function setState(v, silent)
+        state = v
+        U.tw(track, 0.2, { BackgroundColor3 = state and T.Accent or T.GlassHi })
+        U.tw(knob, 0.2, { Position = state and UDim2.new(0, 25, 0, 3) or UDim2.new(0, 3, 0, 3) })
+        if not silent and onChange then U.safe(onChange, state) end
+    end
+
+    btn.MouseButton1Click:Connect(function() setState(not state) end)
+
+    return { frame = row, get = function() return state end, set = function(v) setState(v, true) end }
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [18] COMPONENTE: SLIDER
+-- ═══════════════════════════════════════════════════════════════
+function Components.slider(parent, opts)
+    opts = opts or {}
+    local text = opts.text or "Slider"
+    local min = opts.min or 0
+    local max = opts.max or 100
+    local default = opts.default or min
+    local suffix = opts.suffix or ""
+    local decimals = opts.decimals or 0
+    local onChange = opts.callback
+    local desc = opts.desc
+
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, 0, 0, desc and 74 or 60)
+    row.BackgroundColor3 = T.Card
+    row.BackgroundTransparency = 0.15
+    row.BorderSizePixel = 0
+    row.Parent = parent
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
+
+    local label = Instance.new("TextLabel")
+    label.Text = text
+    label.Font = FONT_MED
+    label.TextSize = 12
+    label.TextColor3 = T.Text
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Size = UDim2.new(1, -100, 0, 18)
+    label.Position = UDim2.new(0, 14, 0, 6)
+    label.BackgroundTransparency = 1
+    label.Parent = row
+
+    if desc then
+        local d = Instance.new("TextLabel")
+        d.Text = desc
+        d.Font = FONT
+        d.TextSize = 10
+        d.TextColor3 = T.TextMuted
+        d.TextXAlignment = Enum.TextXAlignment.Left
+        d.Size = UDim2.new(1, -100, 0, 12)
+        d.Position = UDim2.new(0, 14, 0, 22)
+        d.BackgroundTransparency = 1
+        d.Parent = row
+    end
+
+    local valueBox = Instance.new("TextLabel")
+    valueBox.Text = tostring(default) .. suffix
+    valueBox.Font = FONT_BOLD
+    valueBox.TextSize = 11
+    valueBox.TextColor3 = T.Accent
+    valueBox.BackgroundColor3 = T.GlassHi
+    valueBox.BorderSizePixel = 0
+    valueBox.Size = UDim2.new(0, 68, 0, 22)
+    valueBox.Position = UDim2.new(1, -80, 0, 8)
+    valueBox.Parent = row
+    Instance.new("UICorner", valueBox).CornerRadius = UDim.new(0, 6)
+
+    local barY = desc and 50 or 38
+    local barBg = Instance.new("Frame")
+    barBg.Size = UDim2.new(1, -28, 0, 6)
+    barBg.Position = UDim2.new(0, 14, 0, barY)
+    barBg.BackgroundColor3 = T.GlassHi
+    barBg.BorderSizePixel = 0
+    barBg.Parent = row
+    Instance.new("UICorner", barBg).CornerRadius = UDim.new(0, 3)
+
+    local initPct = (default - min) / (max - min)
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(initPct, 0, 1, 0)
+    fill.BackgroundColor3 = T.Accent
+    fill.BorderSizePixel = 0
+    fill.Parent = barBg
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 3)
+
+    local knobDot = Instance.new("Frame")
+    knobDot.Size = UDim2.new(0, 14, 0, 14)
+    knobDot.Position = UDim2.new(initPct, -7, 0.5, -7)
+    knobDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    knobDot.BorderSizePixel = 0
+    knobDot.ZIndex = 3
+    knobDot.Parent = barBg
+    Instance.new("UICorner", knobDot).CornerRadius = UDim.new(1, 0)
+
+    local dragging = false
+    local currentValue = default
+
+    local barBtn = Instance.new("TextButton")
+    barBtn.Text = ""
+    barBtn.Size = UDim2.new(1, 0, 3, 0)
+    barBtn.Position = UDim2.new(0, 0, -1, 0)
+    barBtn.BackgroundTransparency = 1
+    barBtn.Parent = barBg
+
+    local function formatVal(v)
+        if decimals > 0 then return string.format("%." .. decimals .. "f", v) .. suffix end
+        return tostring(math.floor(v)) .. suffix
+    end
+
+    local function updateFromInput(input)
+        local relX = U.clamp((input.Position.X - barBg.AbsolutePosition.X) / barBg.AbsoluteSize.X, 0, 1)
+        local raw = min + (max - min) * relX
+        local val
+        if decimals > 0 then
+            local mult = 10 ^ decimals
+            val = math.floor(raw * mult + 0.5) / mult
+        else
+            val = math.floor(raw + 0.5)
+        end
+        currentValue = val
+        fill.Size = UDim2.new(relX, 0, 1, 0)
+        knobDot.Position = UDim2.new(relX, -7, 0.5, -7)
+        valueBox.Text = formatVal(val)
+        if onChange then U.safe(onChange, val) end
+    end
+
+    barBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            updateFromInput(input)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch) then
+            updateFromInput(input)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    return {
+        frame = row,
+        get = function() return currentValue end,
+        set = function(v)
+            v = U.clamp(v, min, max)
+            local relX = (v - min) / (max - min)
+            fill.Size = UDim2.new(relX, 0, 1, 0)
+            knobDot.Position = UDim2.new(relX, -7, 0.5, -7)
+            valueBox.Text = formatVal(v)
+            currentValue = v
+        end,
+    }
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [19] COMPONENTE: BUTTON
+-- ═══════════════════════════════════════════════════════════════
+function Components.button(parent, opts)
+    opts = opts or {}
+    local text = opts.text or "Botão"
+    local style = opts.style or "default"
+    local callback = opts.callback
+    local icon = opts.icon
+
+    local btn = Instance.new("TextButton")
+    btn.Text = icon and (icon .. "  " .. text) or text
+    btn.Font = FONT_BOLD
+    btn.TextSize = 12
+    btn.TextColor3 = T.Text
+    btn.BackgroundColor3 = T.Card
+    btn.BackgroundTransparency = 0.15
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
+    btn.Size = UDim2.new(1, 0, 0, 40)
+    btn.Parent = parent
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+
+    if style == "primary" then
+        btn.BackgroundColor3 = T.Deep
+        btn.BackgroundTransparency = 0.05
+    elseif style == "danger" then
+        btn.BackgroundColor3 = T.Danger
+        btn.BackgroundTransparency = 0.7
+        btn.TextColor3 = T.Danger
+    end
+
+    btn.MouseEnter:Connect(function()
+        U.tw(btn, 0.15, { BackgroundColor3 = T.Deep, BackgroundTransparency = 0.05 })
+    end)
+    btn.MouseLeave:Connect(function()
+        if style == "danger" then
+            U.tw(btn, 0.15, { BackgroundColor3 = T.Danger, BackgroundTransparency = 0.7 })
+        else
+            U.tw(btn, 0.15, { BackgroundColor3 = T.Card, BackgroundTransparency = 0.15 })
+        end
+    end)
+
+    btn.MouseButton1Click:Connect(function()
+        if callback then U.safe(callback) end
+    end)
+
+    return { frame = btn, setText = function(t) btn.Text = t end }
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [20] COMPONENTE: TEXTBOX
+-- ═══════════════════════════════════════════════════════════════
+function Components.textbox(parent, opts)
+    opts = opts or {}
+    local placeholder = opts.placeholder or "Digite..."
+    local default = opts.default or ""
+    local callback = opts.callback
+    local label = opts.label
+
+    local wrap = Instance.new("Frame")
+    wrap.Size = UDim2.new(1, 0, 0, label and 66 or 40)
+    wrap.BackgroundTransparency = 1
+    wrap.Parent = parent
+
+    if label then
+        local lbl = Instance.new("TextLabel")
+        lbl.Text = label
+        lbl.Font = FONT_MED
+        lbl.TextSize = 12
+        lbl.TextColor3 = T.Text
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.Size = UDim2.new(1, 0, 0, 18)
+        lbl.Position = UDim2.new(0, 4, 0, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Parent = wrap
+    end
+
+    local box = Instance.new("TextBox")
+    box.PlaceholderText = placeholder
+    box.Text = default
+    box.Font = FONT
+    box.TextSize = 12
+    box.TextColor3 = T.Text
+    box.PlaceholderColor3 = T.TextMuted
+    box.BackgroundColor3 = T.Card
+    box.BackgroundTransparency = 0.15
+    box.BorderSizePixel = 0
+    box.ClearTextOnFocus = false
+    box.TextXAlignment = Enum.TextXAlignment.Left
+    box.Size = UDim2.new(1, 0, 0, 40)
+    box.Position = UDim2.new(0, 0, 0, label and 26 or 0)
+    box.Parent = wrap
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 10)
+
+    local pad = Instance.new("UIPadding", box)
+    pad.PaddingLeft = UDim.new(0, 12)
+
+    box.FocusLost:Connect(function(enterPressed)
+        if callback then U.safe(callback, box.Text, enterPressed) end
+    end)
+
+    return {
+        frame = wrap,
+        box = box,
+        get = function() return box.Text end,
+        set = function(v) box.Text = tostring(v) end,
+    }
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [21] COMPONENTE: DROPDOWN
+-- ═══════════════════════════════════════════════════════════════
+function Components.dropdown(parent, opts)
+    opts = opts or {}
+    local text = opts.text or "Selecione"
+    local items = opts.items or {}
+    local default = opts.default or items[1]
+    local callback = opts.callback
+
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, 0, 0, 44)
+    container.BackgroundColor3 = T.Card
+    container.BackgroundTransparency = 0.15
+    container.BorderSizePixel = 0
+    container.ClipsDescendants = true
+    container.Parent = parent
+    Instance.new("UICorner", container).CornerRadius = UDim.new(0, 10)
+
+    local header = Instance.new("TextButton")
+    header.Text = ""
+    header.Size = UDim2.new(1, 0, 0, 44)
+    header.BackgroundTransparency = 1
+    header.Parent = container
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Text = text
+    lbl.Font = FONT_MED
+    lbl.TextSize = 11
+    lbl.TextColor3 = T.TextDim
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Size = UDim2.new(1, -60, 0, 14)
+    lbl.Position = UDim2.new(0, 14, 0, 6)
+    lbl.BackgroundTransparency = 1
+    lbl.Parent = container
+
+    local value = Instance.new("TextLabel")
+    value.Text = tostring(default)
+    value.Font = FONT_BOLD
+    value.TextSize = 13
+    value.TextColor3 = T.Text
+    value.TextXAlignment = Enum.TextXAlignment.Left
+    value.Size = UDim2.new(1, -60, 0, 18)
+    value.Position = UDim2.new(0, 14, 0, 20)
+    value.BackgroundTransparency = 1
+    value.Parent = container
+
+    local arrow = Instance.new("TextLabel")
+    arrow.Text = "▼"
+    arrow.Font = FONT_BOLD
+    arrow.TextSize = 12
+    arrow.TextColor3 = T.TextDim
+    arrow.Size = UDim2.new(0, 30, 0, 44)
+    arrow.Position = UDim2.new(1, -34, 0, 0)
+    arrow.BackgroundTransparency = 1
+    arrow.Parent = container
+
+    local expanded = false
+    local selected = default
+
+    header.MouseButton1Click:Connect(function()
+        expanded = not expanded
+        U.tw(arrow, 0.2, { Rotation = expanded and 180 or 0 })
+        U.tw(container, 0.25, { Size = UDim2.new(1, 0, 0, expanded and (44 + #items * 32) or 44) })
+    end)
+
+    local listFrame = Instance.new("Frame")
+    listFrame.Size = UDim2.new(1, -12, 0, #items * 32)
+    listFrame.Position = UDim2.new(0, 6, 0, 48)
+    listFrame.BackgroundTransparency = 1
+    listFrame.Parent = container
+
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Padding = UDim.new(0, 2)
+    listLayout.Parent = listFrame
+
+    for _, item in ipairs(items) do
+        local itmBtn = Instance.new("TextButton")
+        itmBtn.Text = tostring(item)
+        itmBtn.Font = FONT
+        itmBtn.TextSize = 12
+        itmBtn.TextColor3 = T.Text
+        itmBtn.TextXAlignment = Enum.TextXAlignment.Left
+        itmBtn.BackgroundColor3 = T.GlassHi
+        itmBtn.BackgroundTransparency = 0.3
+        itmBtn.BorderSizePixel = 0
+        itmBtn.AutoButtonColor = false
+        itmBtn.Size = UDim2.new(1, 0, 0, 30)
+        itmBtn.Parent = listFrame
+        Instance.new("UICorner", itmBtn).CornerRadius = UDim.new(0, 6)
+
+        local pad = Instance.new("UIPadding", itmBtn)
+        pad.PaddingLeft = UDim.new(0, 10)
+
+        itmBtn.MouseButton1Click:Connect(function()
+            selected = item
+            value.Text = tostring(item)
+            if callback then U.safe(callback, item) end
+            expanded = false
+            U.tw(arrow, 0.2, { Rotation = 0 })
+            U.tw(container, 0.25, { Size = UDim2.new(1, 0, 0, 44) })
+        end)
+    end
+
+    return {
+        frame = container,
+        get = function() return selected end,
+        set = function(v) selected = v; value.Text = tostring(v) end,
+    }
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [22] COMPONENTE: KEYBIND
+-- ═══════════════════════════════════════════════════════════════
+function Components.keybind(parent, opts)
+    opts = opts or {}
+    local text = opts.text or "Tecla"
+    local default = opts.default or Enum.KeyCode.RightShift
+    local callback = opts.callback
+
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, 0, 0, 44)
+    row.BackgroundColor3 = T.Card
+    row.BackgroundTransparency = 0.15
+    row.BorderSizePixel = 0
+    row.Parent = parent
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Text = text
+    lbl.Font = FONT_MED
+    lbl.TextSize = 13
+    lbl.TextColor3 = T.Text
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Size = UDim2.new(1, -100, 1, 0)
+    lbl.Position = UDim2.new(0, 14, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Parent = row
+
+    local keyBtn = Instance.new("TextButton")
+    keyBtn.Text = default.Name
+    keyBtn.Font = FONT_BOLD
+    keyBtn.TextSize = 11
+    keyBtn.TextColor3 = T.Accent
+    keyBtn.BackgroundColor3 = T.GlassHi
+    keyBtn.BorderSizePixel = 0
+    keyBtn.AutoButtonColor = false
+    keyBtn.Size = UDim2.new(0, 72, 0, 28)
+    keyBtn.Position = UDim2.new(1, -84, 0.5, -14)
+    keyBtn.Parent = row
+    Instance.new("UICorner", keyBtn).CornerRadius = UDim.new(0, 8)
+
+    local currentKey = default
+    local capturing = false
+
+    keyBtn.MouseButton1Click:Connect(function()
+        capturing = true
+        keyBtn.Text = "..."
+    end)
+
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if not capturing then return end
+        if gpe then return end
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            currentKey = input.KeyCode
+            keyBtn.Text = currentKey.Name
+            capturing = false
+            if callback then U.safe(callback, currentKey) end
+        end
+    end)
+
+    return {
+        frame = row,
+        get = function() return currentKey end,
+        set = function(k) currentKey = k; keyBtn.Text = k.Name end,
+    }
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [23] COMPONENTE: COLORPICKER (simplificado)
+-- ═══════════════════════════════════════════════════════════════
+function Components.colorpicker(parent, opts)
+    opts = opts or {}
+    local text = opts.text or "Cor"
+    local default = opts.default or Color3.fromRGB(230, 40, 55)
+    local callback = opts.callback
+
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, 0, 0, 44)
+    row.BackgroundColor3 = T.Card
+    row.BackgroundTransparency = 0.15
+    row.BorderSizePixel = 0
+    row.Parent = parent
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Text = text
+    lbl.Font = FONT_MED
+    lbl.TextSize = 13
+    lbl.TextColor3 = T.Text
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Size = UDim2.new(1, -100, 1, 0)
+    lbl.Position = UDim2.new(0, 14, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Parent = row
+
+    local swatch = Instance.new("TextButton")
+    swatch.Text = ""
+    swatch.Size = UDim2.new(0, 60, 0, 28)
+    swatch.Position = UDim2.new(1, -72, 0.5, -14)
+    swatch.BackgroundColor3 = default
+    swatch.BorderSizePixel = 0
+    swatch.AutoButtonColor = false
+    swatch.Parent = row
+    Instance.new("UICorner", swatch).CornerRadius = UDim.new(0, 8)
+
+    local presets = {
+        Color3.fromRGB(230, 40, 55),
+        Color3.fromRGB(255, 185, 65),
+        Color3.fromRGB(70, 220, 130),
+        Color3.fromRGB(60, 200, 245),
+        Color3.fromRGB(160, 70, 230),
+        Color3.fromRGB(255, 130, 180),
+    }
+    local idx = 1
+    for i, c in ipairs(presets) do
+        if c == default then idx = i break end
+    end
+
+    swatch.MouseButton1Click:Connect(function()
+        idx = idx % #presets + 1
+        swatch.BackgroundColor3 = presets[idx]
+        if callback then U.safe(callback, presets[idx]) end
+    end)
+
+    return {
+        frame = row,
+        get = function() return presets[idx] end,
+        set = function(c)
+            for i, p in ipairs(presets) do
+                if p == c then idx = i break end
+            end
+            swatch.BackgroundColor3 = c
+        end,
+    }
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [24] COMPONENTE: LABEL E DIVIDER
+-- ═══════════════════════════════════════════════════════════════
+function Components.label(parent, text, color)
+    local l = Instance.new("TextLabel")
+    l.Text = text
+    l.Font = FONT
+    l.TextSize = 11
+    l.TextColor3 = color or T.TextDim
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.TextWrapped = true
+    l.Size = UDim2.new(1, 0, 0, 18)
+    l.BackgroundTransparency = 1
+    l.Parent = parent
+    return l
+end
+
+function Components.divider(parent)
+    local d = Instance.new("Frame")
+    d.Size = UDim2.new(1, 0, 0, 1)
+    d.BackgroundColor3 = T.Border
+    d.BackgroundTransparency = 0.6
+    d.BorderSizePixel = 0
+    d.Parent = parent
+    return d
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [25] LOOP MANAGER
+-- ═══════════════════════════════════════════════════════════════
+local LoopManager = { loops = {} }
+function LoopManager.start(key, fn, interval)
+    if LoopManager.loops[key] then LoopManager.stop(key) end
+    interval = interval or 0.1
+    local running = true
+    LoopManager.loops[key] = { stop = function() running = false end }
+    task.spawn(function()
+        while running and ScreenGui.Parent do
+            local ok, err = pcall(fn)
+            if not ok then warn("[KingOfDark] Loop '" .. key .. "': " .. tostring(err)) end
+            task.wait(interval)
+        end
+        LoopManager.loops[key] = nil
+    end)
+end
+function LoopManager.stop(key)
+    if LoopManager.loops[key] then
+        LoopManager.loops[key].stop()
+        LoopManager.loops[key] = nil
+    end
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [26] TARGET UTILS
+-- ═══════════════════════════════════════════════════════════════
+local Target = {}
+function Target.getPlayers()
+    local list = {}
+    local myHRP = U.getHRP()
+    if not myHRP then return list end
+    local myPos = myHRP.Position
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LP and p.Character then
+            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            if hrp and hum and hum.Health > 0 then
+                table.insert(list, {
+                    player = p, char = p.Character, hrp = hrp, hum = hum,
+                    distance = (hrp.Position - myPos).Magnitude,
+                    health = hum.Health,
+                })
+            end
+        end
+    end
+    return list
+end
+function Target.nearest()
+    local l = Target.getPlayers()
+    table.sort(l, function(a, b) return a.distance < b.distance end)
+    return l[1]
+end
+
+local function tpBehind(targetHRP, offset)
+    offset = offset or 4
+    local hrp = U.getHRP()
+    if hrp and targetHRP then
+        hrp.CFrame = targetHRP.CFrame * CFrame.new(0, 0, -offset)
+    end
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [27] ABAS
+-- ═══════════════════════════════════════════════════════════════
+local Tabs = {}
+local function wrapPage(t)
+    local w = { tab = t, page = t.page }
+    function w.section(title, subtitle) return Components.section(t.page, title, subtitle) end
+    return w
+end
+
+Tabs.principal = wrapPage(buildTabButton("Principal",  "◈", "principal"))
+Tabs.combat    = wrapPage(buildTabButton("Combate",    "⚔", "combat"))
+Tabs.character = wrapPage(buildTabButton("Personagens","✦", "character"))
+Tabs.visual    = wrapPage(buildTabButton("Visual",     "◉", "visual"))
+Tabs.movement  = wrapPage(buildTabButton("Movimento",  "➤", "movement"))
+Tabs.utility   = wrapPage(buildTabButton("Utilidades", "⚙", "utility"))
+Tabs.server    = wrapPage(buildTabButton("Servidor",   "☁", "server"))
+Tabs.config    = wrapPage(buildTabButton("Config",     "⚒", "config"))
+Tabs.premium   = wrapPage(buildTabButton("Premium",    "♛", "premium"))
+Tabs.about     = wrapPage(buildTabButton("Sobre",      "ⓘ", "about"))
+
+-- ═══════════════════════════════════════════════════════════════
+--  [28] ABA PRINCIPAL
+-- ═══════════════════════════════════════════════════════════════
+local FeatureState = {
+    autoFarm = false, autoFarmRange = 30,
+    autoCollect = false, killAura = false, killAuraRange = 15,
+}
+
+do
+    local sec = Tabs.principal.section("AUTO-FARM", "Yen, hits e coleta automática")
+
+    Components.toggle(sec, {
+        text = "Auto-Farm Yen / Hits",
+        desc = "Teletransporta até o alvo mais próximo",
+        default = false,
+        callback = function(v)
+            FeatureState.autoFarm = v
+            if v then
+                LoopManager.start("autoFarm", function()
+                    local t = Target.nearest()
+                    if t and t.distance <= FeatureState.autoFarmRange then
+                        tpBehind(t.hrp, 4)
+                        local tool = U.getChar():FindFirstChildOfClass("Tool")
+                        if tool then tool:Activate() end
+                    end
+                end, 0.15)
+                Notification.push("Auto-Farm", "Ativado", "Success", 2)
+            else
+                LoopManager.stop("autoFarm")
+                Notification.push("Auto-Farm", "Desativado", "Warning", 2)
+            end
+        end,
+    })
+
+    Components.slider(sec, {
+        text = "Raio de Farm", min = 5, max = 150, default = 30, suffix = " std",
+        callback = function(v) FeatureState.autoFarmRange = v end,
+    })
+
+    Components.toggle(sec, {
+        text = "Auto-Coletar Yen",
+        default = false,
+        callback = function(v)
+            FeatureState.autoCollect = v
+            if v then
+                LoopManager.start("autoCollect", function()
+                    local hrp = U.getHRP()
+                    if not hrp then return end
+                    for _, obj in ipairs(workspace:GetDescendants()) do
+                        if obj:IsA("BasePart") and (obj.Name:lower():find("yen") or obj.Name:lower():find("coin")) then
+                            if (obj.Position - hrp.Position).Magnitude < 80 then
+                                hrp.CFrame = CFrame.new(obj.Position + Vector3.new(0, 3, 0))
+                                return
+                            end
+                        end
+                    end
+                end, 0.35)
+            else
+                LoopManager.stop("autoCollect")
+            end
+        end,
+    })
+
+    local sec2 = Tabs.principal.section("TELEPORTE", nil)
+    Components.button(sec2, {
+        text = "Ir para o Mais Próximo", icon = "↯", style = "primary",
+        callback = function()
+            local t = Target.nearest()
+            if t then
+                tpBehind(t.hrp, 4)
+                Notification.push("TP", "Movido até " .. t.player.Name, "Success", 2)
+            end
+        end,
+    })
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [29] ABA COMBATE
+-- ═══════════════════════════════════════════════════════════════
+local Combat = { killAura = false, killAuraRange = 15, autoAttack = false, autoAttackRange = 25 }
+
+do
+    local sec = Tabs.combat.section("KILL AURA", "Ataca tudo ao redor")
+
+    Components.toggle(sec, {
+        text = "Kill Aura",
+        default = false,
+        callback = function(v)
+            Combat.killAura = v
+            if v then
+                LoopManager.start("killAura", function()
+                    local myHRP = U.getHRP()
+                    if not myHRP then return end
+                    for _, t in ipairs(Target.getPlayers()) do
+                        if t.distance <= Combat.killAuraRange then
+                            tpBehind(t.hrp, 3)
+                            local tool = U.getChar():FindFirstChildOfClass("Tool")
+                            if tool then tool:Activate() end
+                            break
+                        end
+                    end
+                end, 0.15)
+                Notification.push("Kill Aura", "Ativado", "Success", 2)
+            else
+                LoopManager.stop("killAura")
+            end
+        end,
+    })
+
+    Components.slider(sec, {
+        text = "Raio do Kill Aura", min = 5, max = 50, default = 15, suffix = " std",
+        callback = function(v) Combat.killAuraRange = v end,
+    })
+
+    local sec2 = Tabs.combat.section("AUTO-ATTACK", nil)
+    Components.toggle(sec2, {
+        text = "Auto-Attack",
+        default = false,
+        callback = function(v)
+            Combat.autoAttack = v
+            if v then
+                LoopManager.start("autoAttack", function()
+                    local t = Target.nearest()
+                    if t and t.distance <= Combat.autoAttackRange then
+                        tpBehind(t.hrp, 3)
+                        local tool = U.getChar():FindFirstChildOfClass("Tool")
+                        if tool then tool:Activate() end
+                    end
+                end, 0.2)
+            else
+                LoopManager.stop("autoAttack")
+            end
+        end,
+    })
+    Components.slider(sec2, {
+        text = "Raio do Auto-Attack", min = 5, max = 100, default = 25, suffix = " std",
+        callback = function(v) Combat.autoAttackRange = v end,
+    })
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [30] ABA VISUAL
+-- ═══════════════════════════════════════════════════════════════
+local Visual = { espEnabled = false, fullbright = false, espColor = Color3.fromRGB(230, 40, 55) }
+local ESP_Objects = {}
+
+do
+    local sec = Tabs.visual.section("ESP", "Caixa ao redor dos jogadores")
+
+    Components.toggle(sec, {
+        text = "ESP Ativado",
+        default = false,
+        callback = function(v)
+            Visual.espEnabled = v
+            if not v then
+                for _, obj in pairs(ESP_Objects) do
+                    if obj.hl then obj.hl:Destroy() end
+                end
+                ESP_Objects = {}
+            end
+        end,
+    })
+
+    Components.colorpicker(sec, {
+        text = "Cor do ESP",
+        default = Color3.fromRGB(230, 40, 55),
+        callback = function(c) Visual.espColor = c end,
+    })
+
+    local sec2 = Tabs.visual.section("ILUMINAÇÃO", nil)
+    Components.toggle(sec2, {
+        text = "Fullbright",
+        default = false,
+        callback = function(v)
+            Visual.fullbright = v
+            if v then
+                Lighting.Brightness = 3
+                Lighting.ClockTime = 14
+                Lighting.GlobalShadows = false
+            else
+                Lighting.Brightness = 2
+                Lighting.GlobalShadows = true
+            end
+        end,
+    })
+end
+
+LoopManager.start("espLoop", function()
+    if not Visual.espEnabled then return end
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p == LP then continue end
+        if not ESP_Objects[p] then
+            local hl = Instance.new("Highlight")
+            hl.FillColor = Visual.espColor
+            hl.FillTransparency = 0.7
+            hl.OutlineColor = Visual.espColor
+            hl.OutlineTransparency = 0
+            hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            hl.Adornee = p.Character
+            hl.Parent = ScreenGui
+            ESP_Objects[p] = { hl = hl }
+        end
+        if ESP_Objects[p] and ESP_Objects[p].hl then
+            ESP_Objects[p].hl.Adornee = p.Character
+            ESP_Objects[p].hl.FillColor = Visual.espColor
+            ESP_Objects[p].hl.OutlineColor = Visual.espColor
+        end
+    end
+end, 0.3)
+
+-- ═══════════════════════════════════════════════════════════════
+--  [31] ABA MOVIMENTO
+-- ═══════════════════════════════════════════════════════════════
+local Movement = { speedEnabled = false, speedValue = 16, jumpEnabled = false, jumpValue = 50, infiniteJump = false }
+
+do
+    local sec = Tabs.movement.section("VELOCIDADE", nil)
+
+    Components.toggle(sec, {
+        text = "Speed Hack", default = false,
+        callback = function(v) Movement.speedEnabled = v end,
+    })
+
+    Components.slider(sec, {
+        text = "WalkSpeed", min = 16, max = 500, default = 16,
+        callback = function(v) Movement.speedValue = v end,
+    })
+
+    local sec2 = Tabs.movement.section("PULO", nil)
+    Components.toggle(sec2, {
+        text = "Jump Power Custom", default = false,
+        callback = function(v) Movement.jumpEnabled = v end,
+    })
+    Components.slider(sec2, {
+        text = "JumpPower", min = 50, max = 500, default = 50,
+        callback = function(v) Movement.jumpValue = v end,
+    })
+    Components.toggle(sec2, {
+        text = "Pulo Infinito", default = false,
+        callback = function(v) Movement.infiniteJump = v end,
+    })
+end
+
+LoopManager.start("movementLoop", function()
+    local hum = U.getHum()
+    if not hum then return end
+    if Movement.speedEnabled then hum.WalkSpeed = Movement.speedValue end
+    if Movement.jumpEnabled then
+        hum.UseJumpPower = true
+        hum.JumpPower = Movement.jumpValue
+    end
+end, 0.1)
+
+UserInputService.JumpRequest:Connect(function()
+    if not Movement.infiniteJump then return end
+    local hum = U.getHum()
+    if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+end)
+-- ═══════════════════════════════════════════════════════════════
+--  [32] ABA UTILIDADES
+-- ═══════════════════════════════════════════════════════════════
+local Utility = { antiAfk = false, fpsBoost = false, fpsCounter = false }
+
+do
+    local sec = Tabs.utility.section("ANTI-AFK", nil)
+    Components.toggle(sec, {
+        text = "Anti-AFK", default = false,
+        callback = function(v)
+            Utility.antiAfk = v
+            Notification.push("Anti-AFK", v and "Ativado" or "Desativado",
+                v and "Success" or "Warning", 2)
+        end,
+    })
+
+    local sec2 = Tabs.utility.section("FPS BOOST", nil)
+    Components.toggle(sec2, {
+        text = "FPS Boost",
+        desc = "Remove sombras e efeitos",
+        default = false,
+        callback = function(v)
+            Utility.fpsBoost = v
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") then
+                    pcall(function() obj.CastShadow = not v end)
+                end
+            end
+            for _, fx in ipairs(Lighting:GetChildren()) do
+                if fx:IsA("PostEffect") then fx.Enabled = not v end
+            end
+        end,
+    })
+
+    local sec3 = Tabs.utility.section("FERRAMENTAS", nil)
+    Components.button(sec3, {
+        text = "Copiar Job ID", icon = "☰",
+        callback = function()
+            if setclipboard then
+                setclipboard(tostring(game.JobId))
+                Notification.push("Clipboard", "Job ID copiado", "Success", 2)
+            end
+        end,
+    })
+    Components.button(sec3, {
+        text = "Copiar Place ID", icon = "◈",
+        callback = function()
+            if setclipboard then setclipboard(tostring(game.PlaceId)) end
+            Notification.push("Clipboard", "Place ID copiado", "Success", 2)
+        end,
+    })
+end
+
+LoopManager.start("antiAfkLoop", function()
+    if not Utility.antiAfk then return end
+    local vu = game:GetService("VirtualUser")
+    pcall(function()
+        vu:CaptureController()
+        vu:ClickButton2(Vector2.new())
+    end)
+end, 55)
+
+-- ═══════════════════════════════════════════════════════════════
+--  [33] ABA SERVIDOR
+-- ═══════════════════════════════════════════════════════════════
+do
+    local sec = Tabs.server.section("AÇÕES DE SERVIDOR", nil)
+
+    Components.button(sec, {
+        text = "Rejoin (Servidor Atual)", icon = "↻", style = "primary",
+        callback = function()
+            Notification.push("Servidor", "Reconectando...", "Info", 2)
+            task.wait(1)
+            TeleportService:Teleport(game.PlaceId, LP)
+        end,
+    })
+
+    Components.button(sec, {
+        text = "Server Hop", icon = "⇄",
+        callback = function()
+            U.safe(function()
+                local url = string.format(
+                    "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100",
+                    game.PlaceId)
+                local res = HttpService:JSONDecode(game:HttpGet(url))
+                local list = {}
+                for _, srv in ipairs(res.data or {}) do
+                    if srv.id ~= game.JobId and srv.playing < srv.maxPlayers then
+                        table.insert(list, srv)
+                    end
+                end
+                if #list > 0 then
+                    local chosen = list[math.random(1, #list)]
+                    TeleportService:TeleportToPlaceInstance(game.PlaceId, chosen.id, LP)
+                end
+            end)
+        end,
+    })
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [34] ABA CONFIG
+-- ═══════════════════════════════════════════════════════════════
+do
+    local sec = Tabs.config.section("TEMA", "Cores do hub")
+
+    Components.dropdown(sec, {
+        text = "Preset",
+        items = { "Crimson", "Void", "Glacier", "Aurum", "Venom", "Sakura", "Midnight" },
+        default = "Crimson",
+        callback = function(v)
+            applyTheme(v)
+            MainStroke.Color = T.Accent
+            BrandTitle.TextColor3 = T.Accent
+            Notification.push("Tema", "Aplicado: " .. T.label, "Success", 2)
+        end,
+    })
+
+    local sec2 = Tabs.config.section("INTERFACE", nil)
+    Components.slider(sec2, {
+        text = "Escala da UI", min = 50, max = 150, default = 100, suffix = " %",
+        callback = function(v)
+            local scale = v / 100
+            Main.Size = UDim2.new(0, 860 * scale, 0, 600 * scale)
+            Main.Position = UDim2.new(0.5, -430 * scale, 0.5, -300 * scale)
+        end,
+    })
+
+    local sec3 = Tabs.config.section("PERSISTÊNCIA", nil)
+    Components.button(sec3, {
+        text = "Salvar Configurações", icon = "▼", style = "primary",
+        callback = function()
+            Save.data.theme = T.key
+            Save.write()
+            Notification.push("Config", "Salvo!", "Success", 2)
+        end,
+    })
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [35] ABA PREMIUM (bloqueada por senha)
+-- ═══════════════════════════════════════════════════════════════
+local Premium = { unlocked = false, godMode = false, ohk = false, password = "1803211300ADMIN" }
+
+do
+    local sec = Tabs.premium.section("ACESSO PREMIUM", "Digite a senha para desbloquear")
+
+    local statusLbl = Instance.new("TextLabel")
+    statusLbl.Text = "🔒 Bloqueado"
+    statusLbl.Font = FONT_BOLD
+    statusLbl.TextSize = 14
+    statusLbl.TextColor3 = T.Danger
+    statusLbl.Size = UDim2.new(1, 0, 0, 24)
+    statusLbl.BackgroundTransparency = 1
+    statusLbl.Parent = sec
+
+    local unlockedContent = Instance.new("Frame")
+    unlockedContent.Size = UDim2.new(1, 0, 0, 0)
+    unlockedContent.AutomaticSize = Enum.AutomaticSize.Y
+    unlockedContent.BackgroundTransparency = 1
+    unlockedContent.Visible = false
+    unlockedContent.Parent = Tabs.premium.page
+
+    local ucList = Instance.new("UIListLayout")
+    ucList.Padding = UDim.new(0, 10)
+    ucList.Parent = unlockedContent
+
+    Components.textbox(sec, {
+        label = "Senha",
+        placeholder = "Digite...",
+        callback = function(v)
+            if v == Premium.password then
+                Premium.unlocked = true
+                statusLbl.Text = "✔ Liberado"
+                statusLbl.TextColor3 = T.Success
+                unlockedContent.Visible = true
+                Notification.push("Premium", "Bem-vindo, Dark Lord!", "Success", 4)
+            else
+                statusLbl.Text = "✘ Senha incorreta"
+                Notification.push("Premium", "Senha errada", "Error", 2)
+            end
+        end,
+    })
+
+    local pSec = Components.section(unlockedContent, "FUNÇÕES PREMIUM", nil)
+
+    Components.toggle(pSec, {
+        text = "God Mode", desc = "Vida infinita",
+        default = false,
+        callback = function(v)
+            Premium.godMode = v
+            if v then
+                LoopManager.start("godMode", function()
+                    local hum = U.getHum()
+                    if hum and hum.Health < hum.MaxHealth then
+                        hum.Health = hum.MaxHealth
+                    end
+                end, 0.1)
+            else
+                LoopManager.stop("godMode")
+            end
+        end,
+    })
+
+    Components.toggle(pSec, {
+        text = "One Hit Kill (hook)", desc = "Multiplica dano por 999x",
+        default = false,
+        callback = function(v) Premium.ohk = v end,
+    })
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [36] ABA SOBRE
+-- ═══════════════════════════════════════════════════════════════
+do
+    local sec = Tabs.about.section("CRÉDITOS", "KingOfDark Hub — Pro Edition")
+
+    local creditsText = [[
+  ♛  DARKLORD DEV TEAM  ♛
+
+  CRIADOR MOR
+  ◆ DarkLord
+
+  EQUIPE DE DESENVOLVIMENTO
+  ◆ Vyper Shadow    — Hooks
+  ◆ Nox Reaper      — UI
+  ◆ Cipher Vox      — Exploit Research
+  ◆ Phantom Byte    — Backend
+  ◆ Iron Wraith     — Otimização
+  ◆ Velvet Spectre  — Design
+
+  Versão: 1.0  |  Build: 2026.01
+  "O que eu construo, ninguém derruba."
+    ]]
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Text = creditsText
+    lbl.Font = FONT_MONO
+    lbl.TextSize = 11
+    lbl.TextColor3 = T.Accent
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextYAlignment = Enum.TextYAlignment.Top
+    lbl.TextWrapped = true
+    lbl.Size = UDim2.new(1, 0, 0, 320)
+    lbl.BackgroundColor3 = T.BG2
+    lbl.BackgroundTransparency = 0.15
+    lbl.Parent = sec
+    Instance.new("UICorner", lbl).CornerRadius = UDim.new(0, 10)
+
+    local lp2 = Instance.new("UIPadding", lbl)
+    lp2.PaddingLeft = UDim.new(0, 16)
+    lp2.PaddingTop = UDim.new(0, 12)
+end
+
+-- ═══════════════════════════════════════════════════════════════
+--  [37] MINIMIZAR / FECHAR
+-- ═══════════════════════════════════════════════════════════════
+local uiVisible = true
+local minimized = false
+
+local function setUIVisible(state)
+    uiVisible = state
+    Main.Visible = state
+end
+
+MinBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    U.tw(Main, 0.3, {
+        Size = minimized and UDim2.new(0, 860, 0, 66) or UDim2.new(0, 860, 0, 600)
+    }, Enum.EasingStyle.Quart)
+    Body.Visible = not minimized
+    Footer.Visible = not minimized
+    EyesBG.Visible = not minimized
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+FloatBtn.MouseButton1Click:Connect(function()
+    setUIVisible(not uiVisible)
+end)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        setUIVisible(not uiVisible)
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════════════
+--  [38] INICIALIZAÇÃO
+-- ═══════════════════════════════════════════════════════════════
+task.defer(function()
+    TabSystem.select("principal")
+end)
+
+task.delay(0.6, function()
+    Notification.push(
+        "KingOfDark Hub",
+        "Carregado com sucesso • " .. tostring(ExecName),
+        "Success", 5
+    )
+end)
+
+-- Footer dinâmico
+task.spawn(function()
+    while ScreenGui.Parent do
+        task.wait(1)
+        local okPing, ping = pcall(function()
+            return math.floor(LP:GetNetworkPing() * 1000)
+        end)
+        statLeft.Text = string.format("● ONLINE  |  Ping: %d ms  |  Jogadores: %d",
+            okPing and ping or 0, #Players:GetPlayers())
+    end
+end)
+
+print("╔══════════════════════════════════════════════════════╗")
+print("║   KingOfDark Hub v1.0 — Pro Edition                  ║")
+print("║   Executor: " .. tostring(ExecName):sub(1, 30))
+print("║   Status: ATIVO  |  RightShift para esconder         ║")
+print("╚══════════════════════════════════════════════════════╝")
