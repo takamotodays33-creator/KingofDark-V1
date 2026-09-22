@@ -1,0 +1,54 @@
+--[[
+    ╔══════════════════════════════════════════════════════════════════╗
+    ║                                                                  ║
+    ║     ██╗  ██╗██╗███╗   ██╗ ██████╗  ██████╗ ███████╗              ║
+    ║     ██║ ██╔╝██║████╗  ██║██╔════╝ ██╔═══██╗██╔════╝              ║
+    ║     █████╔╝ ██║██╔██╗ ██║██║  ███╗██║   ██║█████╗                ║
+    ║     ██╔═██╗ ██║██║╚██╗██║██║   ██║██║   ██║██╔══╝                ║
+    ║     ██║  ██╗██║██║ ╚████║╚██████╔╝╚██████╔╝██║                   ║
+    ║     ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝  ╚═════╝ ╚═╝                   ║
+    ║                                                                  ║
+    ║              L O A D E R   •   P R O   E D I T I O N             ║
+    ║                                                                  ║
+    ║   Carrega KINGOFDARK.txt + KING e junta em um hub só             ║
+    ║                                                                  ║
+    ╚══════════════════════════════════════════════════════════════════╝
+]]
+
+local BASE = "https://raw.githubusercontent.com/takamotodays33-creator/KingofDark-V1/main/"
+
+-- Lista ordenada dos arquivos que compõem o hub
+local PARTS = {
+    "KINGOFDARK.txt",   -- partes 01-16
+    "KING",             -- partes 17-38
+}
+
+local fullCode = ""
+
+-- Baixa cada parte e concatena
+for i, name in ipairs(PARTS) do
+    local url = BASE .. name .. "?t=" .. tostring(os.time())
+    local ok, code = pcall(game.HttpGet, game, url)
+
+    if not ok or not code or #code < 50 then
+        warn("[KingOfDark Loader] Falha ao baixar: " .. name)
+        return
+    end
+
+    fullCode = fullCode .. "\n" .. code
+    print(string.format("[KingOfDark Loader] %s carregado (%d bytes)", name, #code))
+end
+
+-- Compila e executa o código unificado
+local fn, compileErr = loadstring(fullCode)
+if not fn then
+    warn("[KingOfDark Loader] Erro de sintaxe: " .. tostring(compileErr))
+    return
+end
+
+local ok, runErr = pcall(fn)
+if not ok then
+    warn("[KingOfDark Loader] Erro ao executar: " .. tostring(runErr))
+else
+    print("[KingOfDark Loader] Hub carregado com sucesso!")
+end
